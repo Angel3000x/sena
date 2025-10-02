@@ -1,0 +1,110 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema de Asistencia Escolar</title>
+  <!-- Enlace al CSS externo -->
+  <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+  <!-- Barra de navegación simple con anclas -->
+  <nav>
+    <div class="nav-wrap">
+      <strong>Sistema de Asistencia</strong>
+      <div>
+        <a href="#que-es">¿Qué es?</a>
+        <a href="#beneficios">Beneficios</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#demo">Demo</a>
+        <a href="#contacto">Contacto</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Encabezado/Hero con resumen -->
+  <header>
+    <h1>Asistencia Escolar Inteligente</h1>
+    <p>Controla la asistencia de estudiantes en tiempo real, reduce ausencias y mejora la comunicación con las familias.</p>
+    <p style="margin-top:16px"><a class="cta" href="#demo">Probar demo</a></p>
+  </header>
+
+  <main class="container">
+    <section id="que-es" class="card">
+      <h2 class="section-title">¿Qué es el sistema de asistencia?</h2>
+      <p>Es una página sencilla que permite a docentes marcar la asistencia por grupo o curso, registrar retardos y justificar ausencias.</p>
+    </section>
+
+    <section id="beneficios" class="card" style="margin-top:16px">
+      <h2 class="section-title">Beneficios principales</h2>
+      <div class="grid">
+        <div class="feature card">
+          <div class="icon ok">✓</div>
+          <div>
+            <h3>Registro rápido</h3>
+            <p class="muted">Marca asistencia en segundos por lista.</p>
+          </div>
+        </div>
+        <div class="feature card">
+          <div class="icon info">i</div>
+          <div>
+            <h3>Reportes básicos</h3>
+            <p class="muted">Exporta listados para coordinación.</p>
+          </div>
+        </div>
+        <div class="feature card">
+          <div class="icon warn">!</div>
+          <div>
+            <h3>Alertas tempranas</h3>
+            <p class="muted">Detecta ausentismo recurrente.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="como-funciona" class="card" style="margin-top:16px">
+      <h2 class="section-title">¿Cómo funciona?</h2>
+      <ol>
+        <li>Selecciona el curso.</li>
+        <li>Pasa lista.</li>
+        <li>Guarda el registro.</li>
+        <li>Comparte con coordinación.</li>
+      </ol>
+    </section>
+
+    <section id="demo" class="card" style="margin-top:16px">
+      <h2 class="section-title">Demo</h2>
+      <form>
+        <div class="row">
+          <label>Curso <select><option>6°A</option><option>10°A</option></select></label>
+          <label>Fecha <input type="date"></label>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <label>Estudiante <input type="text" placeholder="Nombre"></label>
+          <label>Estado <select><option>Presente</option><option>Tarde</option><option>Ausente</option></select></label>
+        </div>
+        <div style="margin-top:14px">
+          <button type="button">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="contacto" class="card" style="margin-top:16px">
+      <h2 class="section-title">Contacto</h2>
+      <form>
+        <div class="row">
+          <label>Nombre <input type="text"></label>
+          <label>Correo <input type="email"></label>
+        </div>
+        <label style="display:block; margin-top:12px">Mensaje <textarea rows="3"></textarea></label>
+        <div style="margin-top:14px"><button type="button">Enviar</button></div>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <small>© 2025 Sistema de Asistencia Escolar — Maqueta HTML sencilla</small>
+  </footer>
+</body>
+</html>
