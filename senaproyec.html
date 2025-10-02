@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Asistencia en tiempo real — Sistema completo</title>
+  <style>
+    /* ===========================
+       Reset minimal y variables
+       =========================== */
+    :root{
+      --bg:#f3f6fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --text:#0f1724;
+      --primary:#2563eb;
+      --primary-2:#1d4ed8;
+      --success:#16a34a;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+      --glass: rgba(255,255,255,0.6);
+      --radius:14px;
+      --shadow: 0 10px 30px rgba(2,6,23,0.08);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg,#eef2ff 0%, #f3f6fb 100%); color:var(--text); -webkit-font-smoothing:antialiased;}
+    a{color:var(--primary); text-decoration:none}
+    /* ===========================
+       Layout
+       =========================== */
+    header{
+      background: linear-gradient(135deg,var(--primary),var(--primary-2));
+      color:white; padding:36px 20px; border-bottom-left-radius:18px; border-bottom-right-radius:18px;
+      box-shadow: 0 8px 30px rgba(29,78,216,0.12);
+    }
+    header .wrap{ max-width:1200px; margin:0 auto; display:flex; gap:20px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    header h1{ margin:0; font-size: clamp(20px, 3.2vw, 28px); letter-spacing: -0.4px; }
+    header p{ margin:0; opacity:.95; font-size:14px }
+    main{ max-width:1200px; margin:20px auto; padding:16px; }
+    .grid{ display:grid; grid-template-columns: 1fr 420px; gap:18px; align-items:start;}
+    @media(max-width:1000px){ .grid{ grid-template-columns:1fr; } }
+
+    /* ===========================
+       Cards & controls
+       =========================== */
+    .card{ background:var(--card); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); }
+    .section-title{ font-size:18px; margin:0 0 12px; }
+    label{ display:block; font-size:13px; color:var(--muted); margin-bottom:6px; }
+    input[type="text"], input[type="date"], input[type="password"], select, textarea{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #e6eefb; background:#fff; font-size:14px; outline:none;
+    }
+    textarea{ resize:vertical; min-height:60px; }
+    .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media(max-width:600px){ .row{ grid-template-columns:1fr } }
+    .btn{ display:inline-flex; gap:8px; align-items:center; justify-content:center; padding:10px 14px; border-radius:10px; background:var(--primary); color:white; border:none; cursor:pointer; font-weight:700;}
+    .btn.ghost{ background:transparent; color:var(--primary); border:1px solid rgba(29,78,216,0.08); font-weight:600; }
+    .btn.warn{ background:var(--warn); color:#fff; }
+    .btn.danger{ background:var(--danger); }
+    .muted{ color:var(--muted); font-size:13px; }
+
+    /* ===========================
+       Table
+       =========================== */
+    table{ width:100%; border-collapse:collapse; font-size:14px; }
+    th,td{ text-align:left; padding:10px 8px; border-bottom:1px solid #f1f5f9; }
+    th{ font-size:13px; color:var(--muted); background:transparent; font-weight:700; }
+    tbody tr:hover{ background: linear-gradient(90deg, rgba(37,99,235,0.03), rgba(29,78,216,0.02)); }
+
+    /* ===========================
+       Sidebar & panels
+       =========================== */
+    .small{ font-size:13px; color:var(--muted); }
+    .stats{ display:flex; gap:12px; margin-bottom:12px; }
+    .stat{ background:linear-gradient(180deg,#ffffff,#fbfdff); padding:12px; border-radius:12px; box-shadow:0 6px 20px rgba(2,6,23,0.03); width:100%; }
+    .stat h4{ margin:0; font-size:22px; }
+    .stat p{ margin:4px 0 0; color:var(--muted); font-size:13px; }
+
+    /* ===========================
+       Utility
+       =========================== */
+    .hidden{ display:none !important; }
+    .danger-text{ color:var(--danger); font-weight:700; }
+    .pill{ padding:6px 10px; border-radius:999px; font-size:12px; background:#eef2ff; color:var(--primary-2); font-weight:700; display:inline-block; }
+    .footer{ text-align:center; color:var(--muted); padding:20px 0; font-size:13px; }
+
+    /* ===========================
+       Fancy header content
+       =========================== */
+    .top-actions{ display:flex; gap:10px; align-items:center; }
+    .logo{ display:flex; gap:12px; align-items:center; }
+    .logo .mark{ width:48px; height:48px; background:rgba(255,255,255,0.14); border-radius:12px; display:grid; place-items:center; font-weight:800; font-size:18px; color:white; }
+    .help{ color:rgba(255,255,255,0.9); font-size:13px; opacity:.95; }
+
+    /* ===========================
+       Big footer note
+       =========================== */
+    .note{ padding:12px; border-radius:10px; background:linear-gradient(90deg,#fff,#fbfdff); border:1px solid #eef4ff; font-size:13px; color:var(--muted); margin-top:12px; }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="logo">
+        <div class="mark">AS</div>
+        <div>
+          <h1>Asistencia en tiempo real</h1>
+          <p class="help">Control escolar 6° a 11° · Historial, alertas y portal de acudientes</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="pill">Demo local</div>
+        <button class="btn ghost" id="btnReset">🔄 Reset local</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+      <!-- LEFT: Main area -->
+      <div>
+        <!-- Registrar asistencia -->
+        <section class="card" id="panelRegistrar">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h3 class="section-title">Registrar asistencia</h3>
+              <div class="small">Pasa lista por curso, registra observaciones y genera alertas automáticas</div>
+            </div>
+            <div class="muted">Grados 6° → 11°</div>
+          </div>
+
+          <form id="formAsistencia" style="margin-top:12px">
+            <div class="row">
+              <label>
+                Curso
+                <select name="curso" required>
+                  <option value="">Selecciona…</option>
+                  <option>6°</option><option>7°</option><option>8°</option>
+                  <option>9°</option><option>10°</option><option>11°</option>
+                </select>
+              </label>
+              <label>
+                Fecha
+                <input type="date" name="fecha" required />
+              </label>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <label>
+                Estudiante (Nombre completo)
+                <input type="text" name="estudiante" placeholder="Ej: Juan Pérez" required />
+              </label>
+              <label>
+                Estado
+                <select name="estado" required>
+                  <option value="">Selecciona…</option>
+                  <option>Presente</option>
+                  <option>Tarde</option>
+                  <option>Ausente</option>
+                </select>
+              </label>
+            </div>
+
+            <label style="margin-top:10px">
+              Documento / Código del estudiante <span class="small"> (usado como contraseña para el acudiente)</span>
+              <input type="text" name="codigo" placeholder="Ej: 1023456789 o 2025-001" />
+            </label>
+
+            <label style="margin-top:10px">
+              Observación (opcional)
+              <textarea name="observacion" placeholder="Ej: Llegó con excusa médica / Indisciplina en clase"></textarea>
+            </label>
+
+            <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap">
+              <button type="button" class="btn" id="addBtn">Añadir a la lista</button>
+              <button type="button" class="btn ghost" id="saveBtn">Guardar en Local</button>
+              <button type="button" class="btn" id="sendBtn">Enviar por correo</button>
+              <button type="button" class="btn" id="exportBtn">Exportar CSV</button>
+              <button type="button" class="btn ghost" id="toggleAdmin">Abrir panel Admin</button>
+            </div>
+
+            <div class="note" style="margin-top:12px">
+              Consejo: Si pones el <strong>Documento / Código</strong> al registrar el estudiante, se usará como contraseña para el acudiente.
+            </div>
+          </form>
+        </section>
+
+        <!-- Buscador y tabla -->
+        <section class="card" style="margin-top:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h3 class="section-title">Listado de registros</h3>
+              <div class="small">Filtra por nombre para encontrar rápido</div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input id="searchInput" type="text" placeholder="Buscar por estudiante..." style="width:220px; padding:8px 10px; border-radius:8px; border:1px solid #eef4ff;" />
+              <button class="btn ghost" id="clearFilter">Limpiar</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; overflow:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Curso</th><th>Fecha</th><th>Estudiante</th><th>Estado</th><th>Observación</th><th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tablaBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Portal de acudientes -->
+        <section class="card" style="margin-top:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h3 class="section-title">Portal de acudientes</h3>
+              <div class="small">Acudiente / tutor — ingresa para ver el historial y quejas del estudiante</div>
+            </div>
+            <div class="muted">Acceso seguro básico</div>
+          </div>
+
+          <div style="display:flex; gap:14px; margin-top:12px; align-items:flex-start; flex-wrap:wrap;">
+            <div style="flex:1; min-width:220px;">
+              <form id="loginAcudiente">
+                <label>Nombre del estudiante
+                  <input type="text" id="loginNombre" placeholder="Ej: Juan Pérez" required />
+                </label>
+                <label>Contraseña (código)
+                  <input type="password" id="loginPass" placeholder="Documento o código" required />
+                </label>
+                <div style="margin-top:10px; display:flex; gap:10px;">
+                  <button class="btn" type="submit">Entrar</button>
+                  <button class="btn ghost" type="button" id="btnMostrarInfo">¿No tienes cuenta?</button>
+                </div>
+              </form>
+            </div>
+
+            <div style="flex:1.4; min-width:280px;">
+              <div id="panelAcudiente" class="hidden card" style="padding:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <h4>Bienvenido, acudiente de <span id="nombreHijo" style="text-transform:capitalize;"></span></h4>
+                  <button class="btn ghost" id="btnCerrarSesion">Cerrar</button>
+                </div>
+
+                <h5 style="margin-top:8px; margin-bottom:6px">Historial de asistencia</h5>
+                <div style="max-height:200px; overflow:auto;">
+                  <table>
+                    <thead><tr><th>Fecha</th><th>Estado</th><th>Observación</th></tr></thead>
+                    <tbody id="tablaHijo"></tbody>
+                  </table>
+                </div>
+
+                <h5 style="margin-top:10px">Quejas / Alertas</h5>
+                <ul id="listaQuejas"></ul>
+              </div>
+
+              <div id="infoCrearCuenta" class="card" style="padding:12px;">
+                <h5>Cómo obtener acceso</h5>
+                <p class="small">Si el acudiente no tiene cuenta, el profesor puede crearla desde el <strong>panel de administración</strong> o asignar un <em>código</em> al registrar al estudiante (campo Documento / Código).</p>
+                <p class="small">El código asignado durante el registro es la contraseña del acudiente por defecto.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT: Sidebar -->
+      <aside>
+        <div class="card">
+          <h3 class="section-title">Resumen rápido</h3>
+          <div class="stats" style="margin-top:8px;">
+            <div class="stat">
+              <h4 id="totalRegs">0</h4>
+              <p>Registros totales</p>
+            </div>
+            <div class="stat">
+              <h4 id="totalAus">0</h4>
+              <p>Ausencias</p>
+            </div>
+          </div>
+
+          <h4 style="margin-top:8px">Acciones rápidas</h4>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+            <button class="btn" id="btnExportAll">Descargar CSV</button>
+            <button class="btn ghost" id="btnEnviarResumen">Enviar resumen por correo</button>
+            <button class="btn ghost" id="btnVerQuejas">Ver todas las quejas</button>
+          </div>
+
+          <div style="margin-top:12px;">
+            <h4 class="section-title">Panel Admin</h4>
+            <div id="adminPanel" class="hidden">
+              <div style="margin-bottom:8px;">
+                <label>Crear cuenta de acudiente (asignar contraseña)</label>
+                <input id="adminEstudiante" placeholder="Nombre estudiante (exacto)" />
+                <input id="adminPass" placeholder="Contraseña (ej: documento)" style="margin-top:6px;" />
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                  <button class="btn" id="btnCrearCuenta">Crear / Actualizar cuenta</button>
+                  <button class="btn ghost" id="btnGenerarPass">Generar contraseña</button>
+                </div>
+              </div>
+
+              <div style="margin-top:10px;">
+                <label>Lista de cuentas</label>
+                <div id="listaAcudientes" style="max-height:180px; overflow:auto; border:1px solid #f1f5f9; padding:8px; border-radius:10px;"></div>
+              </div>
+
+              <div style="margin-top:10px;">
+                <button class="btn danger" id="btnBorrarTodo">Borrar datos (local)</button>
+              </div>
+            </div>
+            <div id="adminHint" class="note">
+              Pulsa <strong>"Abrir panel Admin"</strong> en Registrar para gestionar cuentas de acudientes.
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h4 class="section-title">Notas</h4>
+          <p class="small">Este es un sistema local (sin servidor). Para enviar correos necesitas configurar EmailJS (reemplaza los IDs en el script).</p>
+          <p class="small">Para producción: mover usuarios y datos a una base de datos segura y usar HTTPS y autenticación real.</p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">
+      <small>© 2025 Asistencia en tiempo real — Demo local · Hecho para pruebas</small>
+    </div>
+  </main>
+
+  <!-- EmailJS SDK (opcional) -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
+  <script>
+    // Inicializa EmailJS (cambia TU_USER_ID por el tuyo)
+    (function(){
+      try { emailjs.init("TU_USER_ID"); } catch(e){ /* EmailJS no disponible -> sigue en modo demo */ }
+    })();
+  </script>
+
+  <script>
+    /* ===========================
+       Lógica principal (Vanilla JS)
+       =========================== */
+
+    // Elementos
+    const form = document.getElementById('formAsistencia');
+    const addBtn = document.getElementById('addBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const tablaBody = document.getElementById('tablaBody');
+    const searchInput = document.getElementById('searchInput');
+    const clearFilter = document.getElementById('clearFilter');
+    const totalRegs = document.getElementById('totalRegs');
+    const totalAus = document.getElementById('totalAus');
+
+    // Portal
+    const loginForm = document.getElementById('loginAcudiente');
+    const panelAcudiente = document.getElementById('panelAcudiente');
+    const nombreHijoSpan = document.getElementById('nombreHijo');
+    const tablaHijo = document.getElementById('tablaHijo');
+    const listaQuejas = document.getElementById('listaQuejas');
+    const btnCerrarSesion = document.getElementById('btnCerrarSesion');
+    const btnMostrarInfo = document.getElementById('btnMostrarInfo');
+
+    // Admin
+    const toggleAdmin = document.getElementById('toggleAdmin');
+    const adminPanel = document.getElementById('adminPanel');
+    const adminHint = document.getElementById('adminHint');
+    const adminEst = document.getElementById('adminEstudiante');
+    const adminPass = document.getElementById('adminPass');
+    const btnCrearCuenta = document.getElementById('btnCrearCuenta');
+    const btnGenerarPass = document.getElementById('btnGenerarPass');
+    const listaAcudientesDiv = document.getElementById('listaAcudientes');
+    const btnReset = document.getElementById('btnReset');
+    const btnBorrarTodo = document.getElementById('btnBorrarTodo');
+
+    // Sidebar quick actions
+    const btnExportAll = document.getElementById('btnExportAll');
+    const btnEnviarResumen = document.getElementById('btnEnviarResumen');
+    const btnVerQuejas = document.getElementById('btnVerQuejas');
+
+    // Data
+    let registros = JSON.parse(localStorage.getItem('asistencia')) || [];
+    let quejas = JSON.parse(localStorage.getItem('quejas')) || [];
+    // acudientes: { "nombre-estudiante-en-minusc": "password" }
+    let acudientes = JSON.parse(localStorage.getItem('acudientes')) || {};
+
+    // Utils
+    function slugName(name){
+      return (name||'').trim().toLowerCase();
+    }
+
+    function saveAll(){
+      localStorage.setItem('asistencia', JSON.stringify(registros));
+      localStorage.setItem('quejas', JSON.stringify(quejas));
+      localStorage.setItem('acudientes', JSON.stringify(acudientes));
+      refreshStats();
+    }
+
+    function refreshStats(){
+      totalRegs.textContent = registros.length;
+      const ausCount = registros.filter(r => r.estado === 'Ausente').length;
+      totalAus.textContent = ausCount;
+    }
+
+    // Render tabla principal
+    function renderTabla(filter = ''){
+      tablaBody.innerHTML = '';
+      const rows = registros
+        .filter(r => r.estudiante.toLowerCase().includes(filter.toLowerCase()));
+      rows.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx+1}</td>
+          <td>${r.curso}</td>
+          <td>${r.fecha}</td>
+          <td>${r.estudiante}</td>
+          <td class="${r.estado==='Ausente' ? 'danger-text' : ''}">${r.estado}</td>
+          <td>${r.observacion ? r.observacion : '—'}</td>
+          <td><button class="btn ghost" data-i="${idx}" onclick="borrarRegistro(${idx})">Eliminar</button></td>
+        `;
+        tablaBody.appendChild(tr);
+      });
+      refreshStats();
+    }
+
+    // Añadir registro
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const curso = fd.get('curso') || '';
+      const fecha = fd.get('fecha') || '';
+      const estudiante = fd.get('estudiante') || '';
+      const estado = fd.get('estado') || '';
+      const observacion = fd.get('observacion') || '';
+      const codigo = fd.get('codigo') || '';
+
+      if(!curso || !fecha || !estudiante || !estado){
+        alert('⚠️ Completa todos los campos obligatorios.');
+        return;
+      }
+
+      const nuevo = { curso, fecha, estudiante, estado, observacion, codigo };
+      registros.push(nuevo);
+
+      // si pusieron código y no existe cuenta, crear acudiente automáticamente
+      if(codigo && slugName(estudiante) && !acudientes[slugName(estudiante)]){
+        acudientes[slugName(estudiante)] = codigo;
+        // guardamos y mostramos
+        localStorage.setItem('acudientes', JSON.stringify(acudientes));
+        mostrarListaAcudientes();
+      }
+
+      saveAll();
+      renderTabla();
+      form.reset();
+      checkAlertas();
+      alert('✅ Registro añadido.');
+    });
+
+    // Guardar en localStorage (botón)
+    saveBtn.addEventListener('click', () => {
+      saveAll();
+      alert('✅ Datos guardados en LocalStorage.');
+    });
+
+    // Borrar registro (global)
+    window.borrarRegistro = function(i){
+      if(!confirm('¿Eliminar este registro?')) return;
+      registros.splice(i,1);
+      saveAll();
+      renderTabla(searchInput.value);
+    };
+
+    // Filtrar
+    searchInput.addEventListener('input', () => renderTabla(searchInput.value));
+    clearFilter.addEventListener('click', () => { searchInput.value=''; renderTabla(); });
+
+    // Export CSV (visible)
+    function exportCSV(data, filename='asistencia.csv'){
+      let csv = 'Curso,Fecha,Estudiante,Estado,Observacion,Codigo\n';
+      data.forEach(r => {
+        // escapar comas simples
+        const row = [r.curso, r.fecha, '"'+(r.estudiante||'').replace(/"/g,'""')+'"', r.estado, '"'+(r.observacion||'').replace(/"/g,'""')+'"', r.codigo||''].join(',');
+        csv += row + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    exportBtn.addEventListener('click', () => {
+      exportCSV(registros, 'asistencia_export.csv');
+    });
+    btnExportAll.addEventListener('click', () => {
+      exportCSV(registros, 'asistencia_full.csv');
+    });
+
+    // Enviar por correo resumen (EmailJS)
+    function sendEmail(templateParams, onOk, onErr){
+      try {
+        emailjs.send('TU_SERVICE_ID','TU_TEMPLATE_ID', templateParams)
+          .then(resp => { if(onOk) onOk(resp); })
+          .catch(err => { if(onErr) onErr(err); });
+      } catch(e){
+        alert('EmailJS no está configurado o no está disponible en este entorno. Usa demo local.');
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      if(registros.length===0){ alert('⚠️ No hay registros para enviar.'); return; }
+      const payload = { registros: JSON.stringify(registros, null, 2) };
+      sendEmail(payload, () => alert('📧 Correo enviado.'), (err) => alert('❌ Error al enviar: '+err));
+    });
+
+    btnEnviarResumen.addEventListener('click', () => {
+      const resumen = {
+        total: registros.length,
+        ausencias: registros.filter(r => r.estado === 'Ausente').length,
+        fecha: new Date().toLocaleString()
+      };
+      sendEmail({ registros: JSON.stringify(resumen, null, 2) }, () => alert('📧 Resumen enviado.'), (e) => alert('❌ Error: '+e));
+    });
+
+    // Alertas y quejas (automático)
+    function checkAlertas(){
+      // contar ausencias por estudiante
+      const conteo = {};
+      registros.forEach(r => {
+        const name = slugName(r.estudiante);
+        if(!conteo[name]) conteo[name] = { aus:0, name: r.estudiante };
+        if(r.estado === 'Ausente') conteo[name].aus++;
+        // observaciones negativas: buscar keywords
+        if(r.observacion){
+          const obs = r.observacion.toLowerCase();
+          if(obs.includes('mala') || obs.includes('indisciplina') || obs.includes('problema') || obs.includes('pelea') || obs.includes('incumple')){
+            registrarQueja(r.estudiante, 'Observación negativa: ' + r.observacion);
+          }
+        }
+      });
+      for(const k in conteo){
+        if(conteo[k].aus >= 3){
+          registrarQueja(conteo[k].name, `Acumula ${conteo[k].aus} ausencias.`);
+        }
+      }
+    }
+
+    function registrarQueja(estudiante, detalle){
+      // evitar duplicados idénticos en el tiempo inmediato
+      const exists = quejas.some(q => q.estudiante === estudiante && q.texto === detalle);
+      if(exists) return;
+      const q = { estudiante, texto: detalle, fecha: new Date().toLocaleDateString() };
+      quejas.push(q);
+      localStorage.setItem('quejas', JSON.stringify(quejas));
+      // si existe acudiente y su contraseña, enviamos correo (si EmailJS disponible)
+      const key = slugName(estudiante);
+      const pass = acudientes[key];
+      const payload = { registros: `Nueva queja para ${estudiante}: ${detalle}` };
+      sendEmail(payload, () => console.log('Correo de queja enviado'), (e) => console.log('Error email queja', e));
+    }
+
+    // Portal: Login de acudiente
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('loginNombre').value.trim();
+      const pass = document.getElementById('loginPass').value.trim();
+      const key = slugName(nombre);
+      if(!acudientes[key]){
+        alert('No existe cuenta asociada a ese nombre. Pide al profesor que cree la cuenta o usa el código asignado.');
+        return;
+      }
+      if(acudientes[key] !== pass){
+        alert('Contraseña incorrecta.');
+        return;
+      }
+      // Login correcto: mostrar panel
+      nombreHijoSpan.textContent = nombre;
+      mostrarInfoAcudiente(key);
+      panelAcudiente.classList.remove('hidden');
+      document.getElementById('infoCrearCuenta').classList.add('hidden');
+    });
+
+    btnCerrarSesion.addEventListener('click', () => {
+      panelAcudiente.classList.add('hidden');
+      document.getElementById('infoCrearCuenta').classList.remove('hidden');
+      document.getElementById('loginNombre').value = '';
+      document.getElementById('loginPass').value = '';
+    });
+
+    btnMostrarInfo.addEventListener('click', () => {
+      alert('Si no tienes cuenta, pide al profesor que la cree desde el panel Admin o que ingrese un código en el campo "Documento / Código" al registrar al estudiante.');
+    });
+
+    function mostrarInfoAcudiente(key){
+      const nombreOriginal = registros.find(r => slugName(r.estudiante) === key);
+      const nombreDisplay = nombreOriginal ? nombreOriginal.estudiante : key;
+      nombreHijoSpan.textContent = nombreDisplay;
+
+      // Historial
+      tablaHijo.innerHTML = '';
+      registros.filter(r => slugName(r.estudiante) === key).forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.fecha}</td><td class="${r.estado==='Ausente'?'danger-text':''}">${r.estado}</td><td>${r.observacion||'—'}</td>`;
+        tablaHijo.appendChild(tr);
+      });
+
+      // Quejas
+      listaQuejas.innerHTML = '';
+      quejas.filter(q => slugName(q.estudiante) === key).forEach(q => {
+        const li = document.createElement('li');
+        li.textContent = `[${q.fecha}] ${q.texto}`;
+        listaQuejas.appendChild(li);
+      });
+    }
+
+    // Admin panel toggling
+    toggleAdmin.addEventListener('click', () => {
+      adminPanel.classList.toggle('hidden');
+      adminHint.classList.toggle('hidden');
+      if(!adminPanel.classList.contains('hidden')) mostrarListaAcudientes();
+    });
+
+    // Crear/Actualizar cuenta acudiente
+    btnCrearCuenta.addEventListener('click', () => {
+      const nombre = adminEst.value.trim();
+      const pass = adminPass.value.trim();
+      if(!nombre || !pass){ alert('Completa nombre y contraseña.'); return; }
+      acudientes[slugName(nombre)] = pass;
+      localStorage.setItem('acudientes', JSON.stringify(acudientes));
+      mostrarListaAcudientes();
+      alert('Cuenta creada/actualizada.');
+    });
+
+    btnGenerarPass.addEventListener('click', () => {
+      const pass = 'P' + Math.random().toString(36).slice(2,10);
+      adminPass.value = pass;
+    });
+
+    function mostrarListaAcudientes(){
+      listaAcudientesDiv.innerHTML = '';
+      const keys = Object.keys(acudientes);
+      if(keys.length===0) listaAcudientesDiv.textContent = 'No hay cuentas creadas.';
+      keys.forEach(k => {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'center';
+        div.style.padding = '6px 8px';
+        div.style.borderBottom = '1px solid #f1f5f9';
+        div.innerHTML = `<strong style="text-transform:capitalize">${k}</strong><div style="display:flex;gap:6px"><span class="small">●</span><button class="btn ghost" onclick="copiarPass('${k}')">Copiar</button></div>`;
+        listaAcudientesDiv.appendChild(div);
+      });
+    }
+
+    window.copiarPass = function(k){
+      const pass = acudientes[k];
+      if(!pass) return alert('No se encontró contraseña.');
+      navigator.clipboard.writeText(pass).then(()=>alert('Contraseña copiada al portapapeles.'));
+    };
+
+    // Reset local (limpiar todo)
+    btnReset.addEventListener('click', () => {
+      if(!confirm('¿Eliminar todos los datos locales (registros, quejas, cuentas)?')) return;
+      localStorage.removeItem('asistencia');
+      localStorage.removeItem('quejas');
+      localStorage.removeItem('acudientes');
+      registros = []; quejas = []; acudientes = {};
+      renderTabla(); mostrarListaAcudientes(); alert('Datos locales eliminados.');
+    });
+
+    // Borrar todo diseño específico
+    btnBorrarTodo.addEventListener('click', () => {
+      if(!confirm('Eliminar todos los datos locales definitivamente?')) return;
+      localStorage.clear();
+      registros = []; quejas = []; acudientes = {};
+      renderTabla(); mostrarListaAcudientes(); alert('Todo borrado.');
+    });
+
+    // Ver todas las quejas en una alerta (rápido)
+    btnVerQuejas.addEventListener('click', () => {
+      if(quejas.length===0) return alert('No hay quejas registradas.');
+      let msg = 'Lista de quejas:\\n\\n';
+      quejas.forEach(q => msg += `[${q.fecha}] ${q.estudiante}: ${q.texto}\\n`);
+      alert(msg);
+    });
+
+    // Inicializar demo con datos de ejemplo (solo si vacío)
+    function initDemoData(){
+      if(registros.length === 0 && Object.keys(acudientes).length === 0){
+        registros = [
+          { curso:'6°', fecha: '2025-09-22', estudiante:'Juan Pérez', estado:'Presente', observacion:'', codigo:'102345' },
+          { curso:'6°', date:'2025-09-22', fecha: '2025-09-23', estudiante:'Ana Torres', estado:'Ausente', observacion:'Familiar reportó enfermedad', codigo:'102346' },
+          { curso:'10°', fecha: '2025-09-23', estudiante:'María López', estado:'Tarde', observacion:'Llegó 15 min tarde', codigo:'2019001' },
+        ];
+        acudientes[slugName('Juan Pérez')] = '102345';
+        acudientes[slugName('Ana Torres')] = '102346';
+        acudientes[slugName('María López')] = '2019001';
+        saveAll();
+      }
+    }
+
+    // Mostrar lista acudientes al cargar
+    mostrarListaAcudientes();
+    refreshStats();
+    initDemoData();
+    renderTabla();
+
+    // Comprobar alertas al cargar
+    checkAlertas();
+
+    // proteger contra pantalla en blanco si algo falla al cargar
+    window.addEventListener('error', (e) => {
+      console.error('Error detectado:', e);
+      alert('Se detectó un error en la página. Revisa la consola del navegador.');
+    });
+
+  </script>
+</body>
+</html>
